@@ -307,7 +307,6 @@ class StarWave:
                 self.fixed_params[name] = param.value
                 continue
             
-            
             lower = param.bounds[0]
             upper = param.bounds[1]
             
