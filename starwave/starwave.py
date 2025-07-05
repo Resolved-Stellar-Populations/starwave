@@ -170,13 +170,10 @@ class StarWave:
             input_mags[ii, :] = input_mag + dm
             exts[ii,:] = np.array([extinction.ccm89(np.array([band_lambda]),av,self.Rv)[0] for band_lambda in self.band_lambdas])
 
-        BM_in_bad = (np.isnan(input_mags) + (input_mags < self.trgb)).any(axis = 1)
+        BM_in_good = ~(np.isnan(input_mags) + (input_mags < self.trgb)).any(axis = 1)
+        input_mags = input_mags[BM_in_good]
 
-        input_mags = input_mags[~BM_in_bad]
-
-        exts = exts[~BM_in_bad]
-
-        BM_in_good = ~BM_in_bad
+        exts = exts[BM_in_good]
 
         if len(input_mags) == 0:
             return input_mags, input_mags
@@ -187,14 +184,14 @@ class StarWave:
 
         output_mags = input_mags + self.asdf_noise[idxs]
 
-        output_bad = np.isnan(output_mags).any(axis = 1)
+        output_good = ~(np.isnan(output_mags).any(axis = 1))
 
-        output_mags = output_mags[~output_bad]
+        output_mags = output_mags[output_good]
 
         BM_out_good = np.zeros(len(BM_in_good),dtype=bool)	
-        output_bad_false_indexes = np.nonzero(~output_bad)[0]
+        output_good_true_indexes = np.nonzero(output_good)[0]
         BM_in_good_true_indexes = np.nonzero(BM_in_good)[0]
-        BM_out_good[BM_in_good_true_indexes[output_bad_false_indexes]] = True
+        BM_out_good[BM_in_good_true_indexes[output_good_true_indexes]] = True
 
         sdict = {'masses': masses, 'binqs': binqs, 'sfhs': sfhs, 'dms': dms, 'avs': avs, 'exts': exts, 'BM_in_good': BM_in_good, 'BM_out_good': BM_out_good}
  
