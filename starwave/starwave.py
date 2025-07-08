@@ -170,7 +170,7 @@ class StarWave:
             input_mags[ii, :] = input_mag + dm
             exts[ii,:] = np.array([extinction.ccm89(np.array([band_lambda]),av,self.Rv)[0] for band_lambda in self.band_lambdas])
 
-        BM_in_good = ~(np.isnan(input_mags) + (input_mags < self.trgb)).any(axis = 1)
+        BM_in_good = ~((np.isnan(input_mags) + (input_mags < self.trgb)).any(axis = 1))
         input_mags = input_mags[BM_in_good]
 
         exts = exts[BM_in_good]
