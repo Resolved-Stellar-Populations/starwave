@@ -2,6 +2,7 @@ import sys
 import os 
 import numpy as np
 import numpy.linalg as la
+from scipy import stats
 
 path = os.path.abspath(__file__)
 dir_path = os.path.dirname(path)
@@ -176,6 +177,37 @@ def set_GR_bpl(alow,ahigh,bm):
 	GR_bpl = GeneralRandom(x,np.exp(y),1000)
 
 	return GR_bpl
+
+def set_GR_dgdm(mu1,deltamu,sigma1,sigma2,amprat):
+	"""
+	defines a GeneralRandom object for a double Gaussian (for use with LOS distances, e.g.)
+	Parameters:
+	-------------
+	mu1,deltamu: Distance MODULUS of Gaussian centers. 
+                     If deltamu is positive, mu1 is NEARER Gaussian and mu2 is FARTHER Gaussian.
+	sigma1,sigma2: Gaussian std deviations of each of the two Gaussians in distance MODULUS
+	amprat: Amplitude ratio of the two Gaussians A1/A2.
+
+	Returns: General Random object (in magnitudes for DM)
+	---------
+	"""
+	a1 = amprat/(1+amprat)
+	a2 = 1/(1+amprat)
+	ngauss = stats.norm(loc=mu1,scale=sigma1)
+	fgauss = stats.norm(loc=mu1+deltamu,scale=sigma2)
+	## Get min and max as 5 sigma from either Gaussian
+	gxmin = np.min([mu1-(5*sigma1),mu1+deltamu-(5*sigma2)])
+	gxmax = np.max([mu1+(5*sigma1),mu1+deltamu+(5*sigma2)])
+	
+	# Get PDFs for each Gaussian on the same x-grid as a function of distance IN KPC:
+
+	x = np.linspace(gxmin,gxmax,1000)
+	npdfmu = ngauss.pdf(x)*a1
+	fpdfmu = fgauss.pdf(x)*a2
+	y = npdfmu + fpdfmu
+
+	GR_dgdm = GeneralRandom(x,y,1000)
+	return GR_dgdm
 
 def set_GR_ln10full(mc,sm,mt,sl):
 	'''

@@ -44,7 +44,7 @@ class StarWave:
     """
 
     def __init__(self, isodf, asdf, bands, band_lambdas, imf_type, sfh_type = 'gaussian',
-        sfh_grid = None, Rv = 3.1, params_kwargs = None):
+        dm_type = 'gaussian', av_type = 'lognormal', sfh_grid = None, Rv = 3.1, params_kwargs = None):
         """
         Initializes the StarWave object
         Parameters
@@ -62,6 +62,12 @@ class StarWave:
             whether to fit an 'spl', 'bpl', or 'ln' IMF parameterization
         sfh_type :  str
             whether to fit a single-burst Gaussian SFH ('gaussian') or sample from a grid-based SFH ('grid')
+        dm_type: str
+            if dm_type = 'dg', uses fixed double Gaussian with parameters in set_dm_dist.
+            Otherwise uses mean and sigma.
+        av_type: str
+            if av_type = 'lognormal', uses lognormal Av distribution with params 'av_logn_sigma' and 'av_logn_mu' 
+            otherwise uses Gaussian with 'av' and 'sig_av'. 
         sfh_grid : dict
             if sfh_type is 'grid', then this dictionary contains the SFH with the following keys:
             'mets' : array of M [Fe/H] grid points
@@ -78,8 +84,11 @@ class StarWave:
 
         self.imf_type = imf_type
         self.sfh_type = sfh_type
+        self.dm_type = dm_type
+        self.av_type = av_type
         self.params_kwargs = params_kwargs
-        self.params = make_params(imf_type, sfh_type, self.params_kwargs)
+        #self.params = make_params(imf_type, sfh_type, self.params_kwargs)
+        self.params = make_params(imf_type, sfh_type, dm_type, av_type, self.params_kwargs)
         self.make_prior(self.params) ## INITIALIZE FIXED PARAMS VECTOR
         self.bands = bands
         self.iso_int = intNN.intNN(isodf, self.bands)
@@ -282,6 +291,38 @@ class StarWave:
             else:
                 return GridSFH(self.sfh_grid)
 
+    def set_dm_dist(self, pdict, dm_type):
+        """
+        Initialize and return DM distribution so that it can be sampled.
+        If dm_type = 'dg', uses double Gaussian LOS distance distribution.
+        Otherwise, assumes a mean and sigma as before.
+        Parameters:
+        ------------
+        dm_type: str
+            If it's 'dg', uses double Gaussian, otherwise assumes a mean and sigma.
+        """ 
+        if dm_type == 'dg':
+            return set_GR_dgdm(pdict['mu1'],pdict['deltamu'],pdict['sigma1'],pdict['sigma2'],pdict['amprat'])
+        else:
+           return SWDist(stats.norm(loc = pdict['dm'], scale = pdict['sig_dm'])) 
+
+    def set_av_dist(self, pdict, av_type):
+        """
+        Initialize and return Av distribution.
+        If av_type = 'lognorm', uses Lognormal, otherwise Gaussian with std dev.
+        Parameters:
+        ----------
+        av_type:str
+           If its 'lognormal', uses a lognormal, otherwise uses a mean and sigma.
+        """
+        if av_type == 'lognormal':
+            #return SWDist(stats.lognorm(s=pdict['av_logn_sigma'], scale = np.exp(pdict['av_logn_mu'])))
+            a = 1 + (pdict['av_logn_sigma']/pdict['av_logn_mu'])**2
+            s_logn = np.sqrt(np.log(a))
+            scale_logn = pdict['av_logn_mu']/np.sqrt(a)
+            return SWDist(stats.lognorm(s = s_logn, scale = scale_logn)) 
+        else:
+            return SWDist(stats.norm(loc = pdict['av'], scale = pdict['sig_av']))
 
     def make_prior(self, parameters):
         """
@@ -313,8 +354,8 @@ class StarWave:
             
             if param.distribution == 'uniform':
                 distribution = torch.distributions.Uniform(lower*torch.ones(1), upper*torch.ones(1))
-                priors.append(distribution)
-                
+                priors.append(distribution)    
+
             elif param.distribution == 'norm':
                 try:
                     mean = param.dist_kwargs['mean']
@@ -384,8 +425,8 @@ class StarWave:
 
         gr_dict['BinQ'] = set_GR_unif(pdict['bf'])
         gr_dict['SFH'] = self.set_sfh_dist(pdict, self.sfh_type)
-        gr_dict['DM'] = SWDist(stats.norm(loc = pdict['dm'], scale = pdict['sig_dm']))
-        gr_dict['av'] = SWDist(stats.norm(loc = pdict['av'], scale = pdict['sig_av']))
+        gr_dict['DM'] = self.set_dm_dist(pdict, self.dm_type) 
+        gr_dict['av'] = self.set_av_dist(pdict, self.av_type)
 
         intensity = 10**pdict['log_int']
         nstars = int(stats.poisson.rvs(intensity))
