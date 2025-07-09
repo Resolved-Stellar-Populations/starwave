@@ -87,7 +87,6 @@ class StarWave:
         self.dm_type = dm_type
         self.av_type = av_type
         self.params_kwargs = params_kwargs
-        #self.params = make_params(imf_type, sfh_type, self.params_kwargs)
         self.params = make_params(imf_type, sfh_type, dm_type, av_type, self.params_kwargs)
         self.make_prior(self.params) ## INITIALIZE FIXED PARAMS VECTOR
         self.bands = bands
