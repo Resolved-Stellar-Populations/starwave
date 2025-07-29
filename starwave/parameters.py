@@ -132,20 +132,29 @@ class SWParameter(OrderedDict):
         
         super().__init__(self.param_dict)
         
-def make_params(imf_type, sfh_type, kwargs = None): # add SFH TYPE
+def make_params(imf_type, sfh_type, dm_type, av_type, kwargs = None): # add SFH TYPE
     
     parameters = {};
     param_mapper = {};
     parameters['log_int'] = SWParameter('log_int', 2, [2, 6])
     parameters['bf'] = SWParameter('bf', 0.2, [0, 1])
 
-    parameters['dm'] = SWParameter('dm', 0, [0, 1], fixed = True)
-    parameters['sig_dm'] = SWParameter('sig_dm', 0.1, [0, 0.5], fixed = True)
-    
-    ## ADD EXTINCTION WITH EXTINCT PACKAGE    
+    if dm_type == 'dg':
+        parameters['mu1'] = SWParameter('mu1', 18.96, [18.8, 19.2], fixed = True)
+        parameters['deltamu'] = SWParameter('deltamu', 0.2, [0.01, 0.4], fixed = True)
+        parameters['sigma1'] = SWParameter('sigma1', 0.3, [0.01, 1.0], fixed = True)
+        parameters['sigma2'] = SWParameter('sigma2', 0.1, [0.01, 1.0], fixed = True)
+        parameters['amprat'] = SWParameter('amprat', 0.5, [0.01, 100], fixed = True)
+    else:
+        parameters['dm'] = SWParameter('dm', 0, [0, 1], fixed = True)
+        parameters['sig_dm'] = SWParameter('sig_dm', 0.1, [0, 0.5], fixed = True)
 
-    parameters['av'] = SWParameter('av', 0, [0, 1], fixed = True)
-    parameters['sig_av'] = SWParameter('sig_av', 0.015, [0, 1], fixed = True)
+    if av_type == 'lognormal':
+        parameters['av_logn_mu'] = SWParameter('av_logn_mu', 0.1, [0.01,0.5], fixed = True)
+        parameters['av_logn_sigma'] = SWParameter('av_logn_sigma', 0.05, [0.001, 0.5], fixed = True)
+    else: 
+        parameters['av'] = SWParameter('av', 0, [0, 1], fixed = True)
+        parameters['sig_av'] = SWParameter('sig_av', 0.015, [0, 1], fixed = True)    
 
     if imf_type == 'spl':
         
