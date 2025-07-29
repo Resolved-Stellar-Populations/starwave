@@ -144,7 +144,7 @@ def make_params(imf_type, sfh_type, dm_type, av_type, kwargs = None): # add SFH 
         parameters['deltamu'] = SWParameter('deltamu', 0.2, [0.01, 0.4], fixed = True)
         parameters['sigma1'] = SWParameter('sigma1', 0.3, [0.01, 1.0], fixed = True)
         parameters['sigma2'] = SWParameter('sigma2', 0.1, [0.01, 1.0], fixed = True)
-        parameters['amprat'] = SWParameter('amprat', 0.5, [0.01, 0.99], fixed = True)
+        parameters['amprat'] = SWParameter('amprat', 0.5, [0.01, 100], fixed = True)
     else:
         parameters['dm'] = SWParameter('dm', 0, [0, 1], fixed = True)
         parameters['sig_dm'] = SWParameter('sig_dm', 0.1, [0, 0.5], fixed = True)
