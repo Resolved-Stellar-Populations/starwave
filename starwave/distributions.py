@@ -10,14 +10,14 @@ sys.path.append(dir_path)
 
 from generalrandom import GeneralRandom
 
-l_logm = np.log(0.05) # lower limit on log stellar mass
-u_logm = np.log(8) # upper limit on log stellar mass
+# l_logm = np.log(0.05) # lower limit on log stellar mass
+# u_logm = np.log(8) # upper limit on log stellar mass
 
-l_age = 8  # lower limit on log stellar age in Gyr
-u_age = 10.1249 # upper limit on log stellar age in Gyr
+# l_age = 8  # lower limit on log stellar age in Gyr
+# u_age = 10.1249 # upper limit on log stellar age in Gyr
 
-l_feh = -4 # lower limit on [Fe/H]
-u_feh = 1 # upper limit on [Fe/H]
+# l_feh = -4 # lower limit on [Fe/H]
+# u_feh = 1 # upper limit on [Fe/H]
 
 # def get_near_psd(A):
 #     C = (A + A.T)/2
@@ -90,13 +90,17 @@ class SW_SFH:
 	wraps around a scipy distribution to give it a sample() method
 	'''
 
-	def __init__(self, scipy_dist):
+	def __init__(self, scipy_dist, age_range, feh_range):
 		self.scipy_dist = scipy_dist
+		self.l_age = age_range[0]
+		self.u_age = age_range[1]
+		self.l_feh = feh_range[0]
+		self.u_feh = feh_range[1]
 
 	def sample(self, N):
 		sfh = self.scipy_dist.rvs(N)
 		age, feh = sfh.T
-		within = (age > l_age) * (age < u_age) * (feh > l_feh) * (feh < u_feh)
+		within = (age > self.l_age) * (age < self.u_age) * (feh > self.l_feh) * (feh < self.u_feh)
 		age[~within] = np.nan
 		feh[~within] = np.nan
 		#age = np.log10(age * 1e9) # CONVERT TO LOG AGE FOR ISOCHRONE
@@ -136,7 +140,7 @@ class GridSFH:
 
 		return np.vstack((sampled_a, sampled_m)).T
 
-def set_GR_spl(slope):
+def set_GR_spl(slope, mass_range):
 	"""
 	defines a GeneralRandom object for a single power-law (Salpeter) IMF
 	Parameters
@@ -149,12 +153,14 @@ def set_GR_spl(slope):
 	GeneralRandom object
 		Salpeter IMF object
 	"""
+	l_logm = np.log(mass_range[0])  # lower limit on log stellar mass
+	u_logm = np.log(mass_range[1])  # upper limit on log stellar mass
 	x = np.linspace(l_logm,u_logm,1000)
 	y = np.exp(x*(slope+1))
 	GR_spl = GeneralRandom(x,y,1000)
 	return GR_spl
 
-def set_GR_bpl(alow,ahigh,bm):
+def set_GR_bpl(alow,ahigh,bm, mass_range):
 	"""
 	defines a GeneralRandom object for a broken power-law (Kroupa) IMF
 	Parameters
@@ -168,9 +174,11 @@ def set_GR_bpl(alow,ahigh,bm):
 
 	Returns
 	-------
-	GeneralRandom object
+	GeneralRandom object	
 		Kroupa IMF object
 	"""
+	l_logm = np.log(mass_range[0])  # lower limit on log stellar mass
+	u_logm = np.log(mass_range[1])  # upper limit on log stellar mass
 	x = np.linspace(l_logm,u_logm,1000)
 	lkm = np.log(bm)*(alow-ahigh)
 	y = np.where(x<np.log(bm), x*(alow+1), +lkm+x*(ahigh+1))
@@ -209,7 +217,7 @@ def set_GR_dgdm(mu1,deltamu,sigma1,sigma2,amprat):
 	GR_dgdm = GeneralRandom(x,y,1000)
 	return GR_dgdm
 
-def set_GR_ln10full(mc,sm,mt,sl):
+def set_GR_ln10full(mc,sm,mt,sl, mass_range):
 	'''
 	defines a GeneralRandom object for a log-normal (Chabrier) IMF
 	Parameters
@@ -228,7 +236,8 @@ def set_GR_ln10full(mc,sm,mt,sl):
 	GeneralRandom object
 		Chabrier IMF object
 	'''
-
+	l_logm = np.log(mass_range[0])  # lower limit on log stellar mass
+	u_logm = np.log(mass_range[1])  # upper limit on log stellar mass
 	x = np.linspace(l_logm,u_logm,1000)
 	BMtr = x>=np.log(mt)
 	lkm = np.exp(np.log(mt)*(sl+1)) / np.exp(-0.5* ((np.log(mt)/np.log(10)-np.log10(mc))/sm)**2)
