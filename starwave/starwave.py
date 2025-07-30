@@ -120,6 +120,32 @@ class StarWave:
         self.Rv = Rv
         self.band_lambdas = band_lambdas
 
+        self.set_param_range(isodf, mass_range, age_range, feh_range)
+
+        self.debug = False
+        
+        print('initalized starwave with %s bands, %s IMF, and default priors' % (str(bands), imf_type))
+        print('using Rv = %.1f' % (self.Rv))
+        self.params.summary()
+
+    def set_param_range(self, isodf, mass_range, age_range, feh_range):
+        """
+        Set the mass, age, and metallicity ranges based on the isochrone dataframe.
+        If the provided ranges are invalid, use the full range from the isochrone dataframe.
+        Parameters
+        ----------
+        isodf : pandas DataFrame
+            Multi-indexed dataframe containing isochrone data for the required photometric bands.
+        mass_range : tuple or None
+            tuple of (min_mass, max_mass) to limit the mass range of the sampled stars
+            if None or invalid, defaults to the full range of the isochrone data
+        age_range : tuple or None
+            tuple of (min_age, max_age) to limit the age range of the sampled stars
+            if None or invalid, defaults to the full range of the isochrone data
+        feh_range : tuple or None
+            tuple of (min_feh, max_feh) to limit the metallicity range of the sampled stars
+            if None or invalid, defaults to the full range of the isochrone data
+        """
         iso_ages = isodf.index.get_level_values('age').unique()
         iso_age_min = iso_ages.min()
         iso_age_max = iso_ages.max()
@@ -150,12 +176,6 @@ class StarWave:
         else:
             self.feh_range = feh_range
             print('using provided metallicity range: %.2f - %.2f' % (feh_range[0], feh_range[1]))
-
-        self.debug = False
-        
-        print('initalized starwave with %s bands, %s IMF, and default priors' % (str(bands), imf_type))
-        print('using Rv = %.1f' % (self.Rv))
-        self.params.summary()
 
     def init_scaler(self, observed_cmd, gamma = 0.5):
         """
