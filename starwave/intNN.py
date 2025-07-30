@@ -46,7 +46,9 @@ class intNN:
                 for band in self.photbands:
                     self.iso_intp[band][aa][zz] = interp1d(isomass, isomags[band], kind='linear', assume_sorted=True,
                                                  bounds_error=False, fill_value=np.nan)
-    def __call__(self,mss,logage,met):
+    def __call__(self,mss,age,met):
+
+        logage = np.log10(age * 1e9)
 
         if logage < self.l_logage or logage > self.u_logage:
 
@@ -56,7 +58,8 @@ class intNN:
             else:
                 pass
 
-        age = 10**logage * 1e-9
+        # age = 10**logage * 1e-9
+        print('age: ', age, 'logage: ', logage)
         nage_idx = findNN_arr.find_nearest_idx(self.isoages,age)
         nmet_idx = findNN_arr.find_nearest_idx(self.isomets,met)
         mags = [];
@@ -64,5 +67,6 @@ class intNN:
         isointp  = {band: self.iso_intp[band][nage_idx][nmet_idx](mss) for band in self.photbands}
 
         return isointp
+
 
    
