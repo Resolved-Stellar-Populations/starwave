@@ -44,7 +44,7 @@ class StarWave:
     """
 
     def __init__(self, isodf, asdf, bands, band_lambdas, imf_type, sfh_type = 'gaussian',
-        dm_type = 'gaussian', av_type = 'lognormal', sfh_grid = None, Rv = 3.1, trgb=-100, mass_range=None, age_range=None, feh_range=None, params_kwargs = None):
+        dm_type = 'gaussian', av_type = 'lognormal', sfh_grid = None, Rv = 3.1, trgb=-100, l_mass=None, age_range=None, feh_range=None, params_kwargs = None):
         """
         Initializes the StarWave object
         Parameters
@@ -77,9 +77,8 @@ class StarWave:
             Rv value to use for the extinction law, default is 3.1
         trgb : float
             TRGB value to use for the CMD fitting, default is -100 (no TRGB)
-        mass_range : tuple
-            tuple of (min_mass, max_mass) to limit the mass range of the sampled stars
-            if not provided, defaults to the full range of the isochrone data
+        l_mass : float
+            lower limit of the mass range to sample from, if not provided, defaults to isochrone data lower limit
         age_range : tuple
             tuple of (min_age, max_age) to limit the age range of the sampled stars
             if not provided, defaults to the full range of the isochrone data
@@ -120,7 +119,7 @@ class StarWave:
         self.Rv = Rv
         self.band_lambdas = band_lambdas
 
-        self.set_param_range(isodf, mass_range, age_range, feh_range)
+        self.set_param_range(isodf, l_mass, age_range, feh_range)
 
         self.debug = False
         
@@ -128,17 +127,17 @@ class StarWave:
         print('using Rv = %.1f' % (self.Rv))
         self.params.summary()
 
-    def set_param_range(self, isodf, mass_range, age_range, feh_range):
+    def set_param_range(self, isodf, l_mass, age_range, feh_range):
         """
         Set the mass, age, and metallicity ranges based on the isochrone dataframe.
         If the provided ranges are invalid, use the full range from the isochrone dataframe.
+        The mass upper limit is always set to be 8 to account to binary systems.
         Parameters
         ----------
         isodf : pandas DataFrame
             Multi-indexed dataframe containing isochrone data for the required photometric bands.
-        mass_range : tuple or None
-            tuple of (min_mass, max_mass) to limit the mass range of the sampled stars
-            if None or invalid, defaults to the full range of the isochrone data
+        l_mass : float
+            lower limit of the mass range to sample from, if not provided, defaults to isochrone data lower limit
         age_range : tuple or None
             tuple of (min_age, max_age) to limit the age range of the sampled stars
             if None or invalid, defaults to the full range of the isochrone data
@@ -156,12 +155,12 @@ class StarWave:
         iso_mass_min = iso_masses.min()
         iso_mass_max = iso_masses.max()
 
-        if mass_range is None or len(mass_range) != 2 or mass_range[0] < iso_mass_min or mass_range[1] > iso_mass_max or mass_range[0] >= mass_range[1]:
-            self.mass_range = (iso_mass_min, iso_mass_max)
-            print('mass range not provided or invalid, using full isochrone mass range: %.2f - %.2f' % (iso_mass_min, iso_mass_max))
+        if l_mass is None  or l_mass < iso_mass_min  or l_mass >= 8:
+            self.mass_range = (iso_mass_min, 8)
+            print('mass range not provided or invalid, using full isochrone mass range: %.2f - 8.0' % (iso_mass_min))
         else:
-            self.mass_range = mass_range
-            print('using provided mass range: %.2f - %.2f' % (mass_range[0], mass_range[1]))
+            self.mass_range = (l_mass, 8)
+            print('using provided mass range: %.2f - 8.0' % (l_mass))
 
         if age_range is None or len(age_range) != 2 or age_range[0] < iso_age_min or age_range[1] > iso_age_max or age_range[0] >= age_range[1]:
             self.age_range = (iso_age_min, iso_age_max)
