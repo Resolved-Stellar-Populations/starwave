@@ -79,7 +79,7 @@ class StarWave:
             TRGB value to use for the CMD fitting, default is -100 (no TRGB)
         mass_range : tuple
             tuple of (min_mass, max_mass) to limit the mass range of the sampled stars
-            if not provided, defaults to the full range of the isochrone data
+            if None or invalid, defaults to the range of the isochrone lower limit to 8 Msun (for binary systems)
         age_range : tuple
             tuple of (min_age, max_age) to limit the age range of the sampled stars
             if not provided, defaults to the full range of the isochrone data
@@ -138,7 +138,7 @@ class StarWave:
             Multi-indexed dataframe containing isochrone data for the required photometric bands.
         mass_range : tuple or None
             tuple of (min_mass, max_mass) to limit the mass range of the sampled stars
-            if None or invalid, defaults to the full range of the isochrone data
+            if None or invalid, defaults to the range of the isochrone lower limit to 8 Msun
         age_range : tuple or None
             tuple of (min_age, max_age) to limit the age range of the sampled stars
             if None or invalid, defaults to the full range of the isochrone data
@@ -159,7 +159,7 @@ class StarWave:
 
         if mass_range is None or len(mass_range) != 2 or mass_range[0] < iso_mass_min or mass_range[1] > default_upper_mass or mass_range[0] >= mass_range[1]:
             self.mass_range = (iso_mass_min, default_upper_mass)
-            print('mass range not provided or invalid, using full isochrone mass range: %.2f - %.2f' % (iso_mass_min, default_upper_mass))
+            print('mass range not provided or invalid, using mass range: %.2f - %.2f' % (iso_mass_min, default_upper_mass))
         else:
             self.mass_range = mass_range
             print('using provided mass range: %.2f - %.2f' % (mass_range[0], mass_range[1]))
