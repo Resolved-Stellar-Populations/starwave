@@ -159,17 +159,17 @@ class StarWave:
 
         if mass_range is None or len(mass_range) != 2 or mass_range[0] < iso_mass_min or mass_range[1] > default_upper_mass or mass_range[0] >= mass_range[1]:
             self.mass_range = (iso_mass_min, default_upper_mass)
-            print('mass range not provided or invalid, using mass range: %.2f - %.2f' % (iso_mass_min, default_upper_mass))
+            print('mass range not provided or invalid, using mass range: %.2f - %.2f Msun' % (iso_mass_min, default_upper_mass))
         else:
             self.mass_range = mass_range
-            print('using provided mass range: %.2f - %.2f' % (mass_range[0], mass_range[1]))
+            print('using provided mass range: %.2f - %.2f Msun' % (mass_range[0], mass_range[1]))
 
         if age_range is None or len(age_range) != 2 or age_range[0] < iso_age_min or age_range[1] > iso_age_max or age_range[0] >= age_range[1]:
             self.age_range = (iso_age_min, iso_age_max)
-            print('age range not provided or invalid, using full isochrone age range: %.2f - %.2f' % (iso_age_min, iso_age_max))
+            print('age range not provided or invalid, using full isochrone age range: %.2f - %.2f Gyr' % (iso_age_min, iso_age_max))
         else:
             self.age_range = age_range
-            print('using provided age range: %.2f - %.2f' % (age_range[0], age_range[1]))
+            print('using provided age range: %.2f - %.2f Gyr' % (age_range[0], age_range[1]))
 
         if feh_range is None or len(feh_range) != 2 or feh_range[0] < iso_feh_min or feh_range[1] > iso_feh_max or feh_range[0] >= feh_range[1]:
             self.feh_range = (iso_feh_min, iso_feh_max)
