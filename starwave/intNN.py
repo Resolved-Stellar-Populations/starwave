@@ -19,10 +19,8 @@ class intNN:
 
         self.isoages = np.unique(np.asarray([isoPD.index.get_level_values('age')]).T)
 
-        self.logages = np.log10(self.isoages * 1e9)
-
-        self.l_logage = np.min(self.logages)
-        self.u_logage = np.max(self.logages)
+        self.l_age = np.min(self.isoages)
+        self.u_age = np.max(self.isoages)
 
         self.isomets = np.unique(np.asarray([isoPD.index.get_level_values('[Fe/H]')]).T)
         self.iso_intp = {};
@@ -46,23 +44,20 @@ class intNN:
                 for band in self.photbands:
                     self.iso_intp[band][aa][zz] = interp1d(isomass, isomags[band], kind='linear', assume_sorted=True,
                                                  bounds_error=False, fill_value=np.nan)
-    def __call__(self,mss,logage,met):
+    def __call__(self,mss,age,met):
 
-        if logage < self.l_logage or logage > self.u_logage:
+        if age < self.l_age or age > self.u_age:
 
-            if not self.has_warned:
-                print('intNN warning: age out of bounds')
-                self.has_warned = True
-            else:
-                pass
+            isointp = {band: np.nan for band in self.photbands}
 
-        age = 10**logage * 1e-9
-        nage_idx = findNN_arr.find_nearest_idx(self.isoages,age)
-        nmet_idx = findNN_arr.find_nearest_idx(self.isomets,met)
-        mags = [];
+        else:
+            nage_idx = findNN_arr.find_nearest_idx(self.isoages,age)
+            nmet_idx = findNN_arr.find_nearest_idx(self.isomets,met)
+            mags = [];
 
-        isointp  = {band: self.iso_intp[band][nage_idx][nmet_idx](mss) for band in self.photbands}
+            isointp  = {band: self.iso_intp[band][nage_idx][nmet_idx](mss) for band in self.photbands}
 
         return isointp
+
 
    
