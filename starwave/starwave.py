@@ -79,7 +79,7 @@ class StarWave:
             TRGB value to use for the CMD fitting, default is -100 (no TRGB)
         mass_range : tuple
             tuple of (min_mass, max_mass) to limit the mass range of the sampled stars
-            if not provided, defaults to the full range of the isochrone data
+            if None or invalid, defaults to the range of the isochrone lower limit to 8 Msun (for binary systems)
         age_range : tuple
             tuple of (min_age, max_age) to limit the age range of the sampled stars
             if not provided, defaults to the full range of the isochrone data
@@ -138,7 +138,7 @@ class StarWave:
             Multi-indexed dataframe containing isochrone data for the required photometric bands.
         mass_range : tuple or None
             tuple of (min_mass, max_mass) to limit the mass range of the sampled stars
-            if None or invalid, defaults to the full range of the isochrone data
+            if None or invalid, defaults to the range of the isochrone lower limit to 8 Msun
         age_range : tuple or None
             tuple of (min_age, max_age) to limit the age range of the sampled stars
             if None or invalid, defaults to the full range of the isochrone data
@@ -154,21 +154,22 @@ class StarWave:
         iso_feh_max = iso_feh.max()
         iso_masses = isodf.index.get_level_values('mass').unique()
         iso_mass_min = iso_masses.min()
-        iso_mass_max = iso_masses.max()
+        # iso_mass_max = iso_masses.max()
+        default_upper_mass = 8.0
 
-        if mass_range is None or len(mass_range) != 2 or mass_range[0] < iso_mass_min or mass_range[1] > iso_mass_max or mass_range[0] >= mass_range[1]:
-            self.mass_range = (iso_mass_min, iso_mass_max)
-            print('mass range not provided or invalid, using full isochrone mass range: %.2f - %.2f' % (iso_mass_min, iso_mass_max))
+        if mass_range is None or len(mass_range) != 2 or mass_range[0] < iso_mass_min or mass_range[1] > default_upper_mass or mass_range[0] >= mass_range[1]:
+            self.mass_range = (iso_mass_min, default_upper_mass)
+            print('mass range not provided or invalid, using mass range: %.2f - %.2f Msun' % (iso_mass_min, default_upper_mass))
         else:
             self.mass_range = mass_range
-            print('using provided mass range: %.2f - %.2f' % (mass_range[0], mass_range[1]))
+            print('using provided mass range: %.2f - %.2f Msun' % (mass_range[0], mass_range[1]))
 
         if age_range is None or len(age_range) != 2 or age_range[0] < iso_age_min or age_range[1] > iso_age_max or age_range[0] >= age_range[1]:
             self.age_range = (iso_age_min, iso_age_max)
-            print('age range not provided or invalid, using full isochrone age range: %.2f - %.2f' % (iso_age_min, iso_age_max))
+            print('age range not provided or invalid, using full isochrone age range: %.2f - %.2f Gyr' % (iso_age_min, iso_age_max))
         else:
             self.age_range = age_range
-            print('using provided age range: %.2f - %.2f' % (age_range[0], age_range[1]))
+            print('using provided age range: %.2f - %.2f Gyr' % (age_range[0], age_range[1]))
 
         if feh_range is None or len(feh_range) != 2 or feh_range[0] < iso_feh_min or feh_range[1] > iso_feh_max or feh_range[0] >= feh_range[1]:
             self.feh_range = (iso_feh_min, iso_feh_max)
