@@ -377,7 +377,7 @@ class StarWave:
             elif self.age_type == 'exponential':
                 scale = 1.0 / pdict['sfr0']
                 loc = pdict['t0']
-                age_dist = stats.expon(loc = loc, scale = scale)
+                age_dist = reverse_expon(loc = loc, scale = scale)
             return Emp_MDF_Sci_Age(age_dist, feh_gr, self.age_range, self.feh_range)
 
     def set_dm_dist(self, pdict, dm_type):

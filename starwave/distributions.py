@@ -83,7 +83,26 @@ def isPD(B):
 	except la.LinAlgError:
 		return False
 
+class reverse_expon:
+    '''
+	A reverse exponential distribution that samples ages in Gyr.
+	p(x) = 1/scale * exp(-(loc-x)/scale) for x < t0
+	Parameters
+	----------	loc : float
+		location parameter, the minimum age in Gyr
+	scale : float
+		scale parameter, the inverse of the rate of the exponential decay
+	Returns
+	-------
+	rvs : array
+		N x 1 array of ages in Gyr, where N is the number of samples
+	'''
+    def __init__(self, loc=0, scale=1):
+        self.loc = loc
+        self.scale = scale
 
+    def rvs(self, N):
+        return - stats.expon.rvs(scale=self.scale, loc=-self.loc, size=N)
 
 class SW_SFH:
 	'''
@@ -105,6 +124,8 @@ class SW_SFH:
 		feh[~within] = np.nan
 		#age = np.log10(age * 1e9) # CONVERT TO LOG AGE FOR ISOCHRONE
 		return np.vstack((age, feh)).T
+
+
 
 class Emp_MDF_Sci_Age:
 	'''
