@@ -106,6 +106,37 @@ class SW_SFH:
 		#age = np.log10(age * 1e9) # CONVERT TO LOG AGE FOR ISOCHRONE
 		return np.vstack((age, feh)).T
 
+class EMP_SFH:
+	'''
+	wraps around GeneralRandom and scipy distribution to sample metallicities from empirical distribution and ages from a scipy distribution
+	Parameters
+	----------
+	age_dist : scipy distribution object
+		distribution of ages in Gyr
+	feh_gr : GeneralRandom object
+		distribution of metallicities
+	Returns
+	-------
+	sample : array
+		N x 2 array of ages and metallicities, where each row is [age, feh]
+	'''
+	
+	def __init__(self, age_dist, feh_gr, age_range, feh_range):
+		self.age_dist = age_dist
+		self.feh_gr = feh_gr
+		self.l_age = age_range[0]
+		self.u_age = age_range[1]
+		self.l_feh = feh_range[0]
+		self.u_feh = feh_range[1]
+
+	def sample(self, N):
+		age = self.age_dist.rvs(N)
+		feh = self.feh_gr.sample(N)
+		within = (age > self.l_age) * (age < self.u_age) * (feh > self.l_feh) * (feh < self.u_feh)
+		age[~within] = np.nan
+		feh[~within] = np.nan
+		return np.vstack((age, feh)).T
+
 class GridSFH:
 	'''
 	loads and samples a grid-based SFH from a dictionary of ages, metallicities, and weights

@@ -181,6 +181,10 @@ def make_params(imf_type, sfh_type, dm_type, av_type, kwargs = None): # add SFH 
         parameters['sig_feh'] = SWParameter('sig_feh', 0.1, [0.05, 1])
         parameters['age_feh_corr'] = SWParameter('age_feh_corr', -0.5, [-1, 0])
 
+    elif sfh_type == 'empirical':
+        parameters['age'] = SWParameter('age', 5, [0.1, 13.4])
+        parameters['sig_age'] = SWParameter('sig_age', 1, [0.1, 5])
+
     # for ii,parameter in enumerate(parameters.keys()):
     #     param_mapper[ii] = parameter
     # print(param_mapper)
