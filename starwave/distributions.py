@@ -106,7 +106,7 @@ class SW_SFH:
 		#age = np.log10(age * 1e9) # CONVERT TO LOG AGE FOR ISOCHRONE
 		return np.vstack((age, feh)).T
 
-class EMP_SFH:
+class Emp_MDF_Sci_Age:
 	'''
 	wraps around GeneralRandom and scipy distribution to sample metallicities from empirical distribution and ages from a scipy distribution
 	Parameters
