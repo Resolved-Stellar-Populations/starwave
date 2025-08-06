@@ -375,9 +375,9 @@ class StarWave:
             if self.age_type == 'gaussian':
                 age_dist = stats.norm(loc = pdict['age'], scale = pdict['sig_age'])
             elif self.age_type == 'exponential':
-                scale = 1.0 / pdict['sfr0']
+                scale = 1.0 / pdict['tau']
                 loc = pdict['t0']
-                age_dist = reverse_expon(loc = loc, scale = scale)
+                age_dist = exponential_decay(loc = loc, scale = scale)
             return Emp_MDF_Sci_Age(age_dist, feh_gr, self.age_range, self.feh_range)
 
     def set_dm_dist(self, pdict, dm_type):

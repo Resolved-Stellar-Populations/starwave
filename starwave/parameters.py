@@ -186,8 +186,8 @@ def make_params(imf_type, sfh_type, dm_type, av_type, age_type = None, kwargs = 
             parameters['age'] = SWParameter('age', 5, [0.1, 13.4])
             parameters['sig_age'] = SWParameter('sig_age', 1, [0.1, 5])
         elif age_type == 'exponential':
-            parameters['t0'] = SWParameter('t0', 10, [0.1, 13.4], fixed = True) # start of SFH in Gyr
-            parameters['sfr0'] = SWParameter('sfr0', 1, [0.1, 100], fixed = True) # SFR at t = t0
+            parameters['t0'] = SWParameter('t0', 10, [0.1, 13.4], fixed = True) 
+            parameters['tau'] = SWParameter('tau', 1, [0.1, 100], fixed = True) 
 
     # for ii,parameter in enumerate(parameters.keys()):
     #     param_mapper[ii] = parameter

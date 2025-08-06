@@ -83,15 +83,15 @@ def isPD(B):
 	except la.LinAlgError:
 		return False
 
-class reverse_expon:
+class exponential_decay:
     '''
-	A reverse exponential distribution that samples ages in Gyr.
-	p(x) = 1/scale * exp(-(loc-x)/scale) for x < t0
+	An exponential star formation that starts at loc and decays with constant 1/scale
+	p(x) = 1/scale * exp(-(loc-x)/scale) for x < loc
 	Parameters
 	----------	loc : float
 		location parameter, the minimum age in Gyr
 	scale : float
-		scale parameter, the inverse of the rate of the exponential decay
+		scale parameter, inverse of the rate of the exponential decay
 	Returns
 	-------
 	rvs : array
