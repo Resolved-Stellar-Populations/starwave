@@ -89,7 +89,7 @@ class exponential_decay:
 	p(x) = 1/scale * exp(-(loc-x)/scale) for x < loc
 	Parameters
 	----------	loc : float
-		location parameter, the minimum age in Gyr
+		location parameter, the maximum age in Gyr
 	scale : float
 		scale parameter, inverse of the rate of the exponential decay
 	Returns
