@@ -83,7 +83,26 @@ def isPD(B):
 	except la.LinAlgError:
 		return False
 
+class exponential_decay:
+    '''
+	An exponential star formation that starts at loc and decays with constant 1/scale
+	p(x) = 1/scale * exp(-(loc-x)/scale) for x < loc
+	Parameters
+	----------	loc : float
+		location parameter, the maximum age in Gyr
+	scale : float
+		scale parameter, inverse of the rate of the exponential decay
+	Returns
+	-------
+	rvs : array
+		N x 1 array of ages in Gyr, where N is the number of samples
+	'''
+    def __init__(self, loc=0, scale=1):
+        self.loc = loc
+        self.scale = scale
 
+    def rvs(self, N):
+        return - stats.expon.rvs(scale=self.scale, loc=-self.loc, size=N)
 
 class SW_SFH:
 	'''
@@ -104,6 +123,39 @@ class SW_SFH:
 		age[~within] = np.nan
 		feh[~within] = np.nan
 		#age = np.log10(age * 1e9) # CONVERT TO LOG AGE FOR ISOCHRONE
+		return np.vstack((age, feh)).T
+
+
+
+class Emp_MDF_Sci_Age:
+	'''
+	wraps around GeneralRandom and scipy distribution to sample metallicities from empirical distribution and ages from a scipy distribution
+	Parameters
+	----------
+	age_dist : scipy distribution object
+		distribution of ages in Gyr
+	feh_gr : GeneralRandom object
+		distribution of metallicities
+	Returns
+	-------
+	sample : array
+		N x 2 array of ages and metallicities, where each row is [age, feh]
+	'''
+	
+	def __init__(self, age_dist, feh_gr, age_range, feh_range):
+		self.age_dist = age_dist
+		self.feh_gr = feh_gr
+		self.l_age = age_range[0]
+		self.u_age = age_range[1]
+		self.l_feh = feh_range[0]
+		self.u_feh = feh_range[1]
+
+	def sample(self, N):
+		age = self.age_dist.rvs(N)
+		feh = self.feh_gr.sample(N)
+		within = (age > self.l_age) * (age < self.u_age) * (feh > self.l_feh) * (feh < self.u_feh)
+		age[~within] = np.nan
+		feh[~within] = np.nan
 		return np.vstack((age, feh)).T
 
 class GridSFH:

@@ -132,7 +132,7 @@ class SWParameter(OrderedDict):
         
         super().__init__(self.param_dict)
         
-def make_params(imf_type, sfh_type, dm_type, av_type, kwargs = None): # add SFH TYPE
+def make_params(imf_type, sfh_type, dm_type, av_type, age_type = None, kwargs = None): # add SFH TYPE
     
     parameters = {};
     param_mapper = {};
@@ -180,6 +180,14 @@ def make_params(imf_type, sfh_type, dm_type, av_type, kwargs = None): # add SFH 
         parameters['feh'] = SWParameter('feh', -1, [-4, 1])
         parameters['sig_feh'] = SWParameter('sig_feh', 0.1, [0.05, 1])
         parameters['age_feh_corr'] = SWParameter('age_feh_corr', -0.5, [-1, 0])
+
+    elif sfh_type == 'empirical_mdf':
+        if age_type == 'gaussian':
+            parameters['age'] = SWParameter('age', 5, [0.1, 13.4])
+            parameters['sig_age'] = SWParameter('sig_age', 1, [0.1, 5])
+        elif age_type == 'exponential':
+            parameters['t0'] = SWParameter('t0', 10, [0.1, 13.4], fixed = True) 
+            parameters['tau'] = SWParameter('tau', 1, [0.1, 100], fixed = True) 
 
     # for ii,parameter in enumerate(parameters.keys()):
     #     param_mapper[ii] = parameter

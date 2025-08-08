@@ -44,7 +44,7 @@ class StarWave:
     """
 
     def __init__(self, isodf, asdf, bands, band_lambdas, imf_type, sfh_type = 'gaussian',
-        dm_type = 'gaussian', av_type = 'lognormal', sfh_grid = None, Rv = 3.1, trgb=-100, mass_range=None, age_range=None, feh_range=None, params_kwargs = None):
+        dm_type = 'gaussian', av_type = 'lognormal', sfh_grid = None, Rv = 3.1, trgb=-100, mass_range=None, age_range=None, feh_range=None, feh_dis=None, age_type=None, params_kwargs = None):
         """
         Initializes the StarWave object
         Parameters
@@ -62,6 +62,7 @@ class StarWave:
             whether to fit an 'spl', 'bpl', or 'ln' IMF parameterization
         sfh_type :  str
             whether to fit a single-burst Gaussian SFH ('gaussian') or sample from a grid-based SFH ('grid')
+            or age from a gaussian and [Fe/H] from an empirical distribution ('empirical_mdf)')
         dm_type: str
             if dm_type = 'dg', uses fixed double Gaussian with parameters in set_dm_dist.
             Otherwise uses mean and sigma.
@@ -86,6 +87,10 @@ class StarWave:
         feh_range : tuple
             tuple of (min_feh, max_feh) to limit the metallicity range of the sampled stars
             if not provided, defaults to the full range of the isochrone data
+        feh_dis : 2d array
+            if sfh_type = 'empirical_mdf', this is a 2d array with the first column being the [Fe/H] values and the second column being the probability density at that [Fe/H]
+        age_type : str
+            if sfh_type = 'empirical_mdf', this is the type of age distribution to use, currently only 'gaussian' and 'exponential' is supported
         params_kwargs : dict
             dictionary for printing/saving prior parameters
 
@@ -95,12 +100,20 @@ class StarWave:
             print('please pass an sfh_grid if you want to use grid-based SFH sampling!')
             raise
 
+        if sfh_type == 'empirical_mdf' and feh_dis is None:
+            print('please pass feh_dis if you want to use empirical SFH sampling!')
+            raise
+
+        if sfh_type == 'empirical_mdf' and age_type not in ['gaussian', 'exponential']:
+            print('Currently only gaussian and exponential age distributions are supported for age sampling!')
+            raise
+
         self.imf_type = imf_type
         self.sfh_type = sfh_type
         self.dm_type = dm_type
         self.av_type = av_type
         self.params_kwargs = params_kwargs
-        self.params = make_params(imf_type, sfh_type, dm_type, av_type, self.params_kwargs)
+        self.params = make_params(imf_type, sfh_type, dm_type, av_type, age_type, self.params_kwargs)
         self.make_prior(self.params) ## INITIALIZE FIXED PARAMS VECTOR
         self.bands = bands
         self.iso_int = intNN.intNN(isodf, self.bands)
@@ -116,6 +129,8 @@ class StarWave:
         self.trgb = trgb
         self.lim_logmass = np.log(0.1)
         self.sfh_grid = sfh_grid
+        self.feh_dis = feh_dis
+        self.age_type = age_type
 
         self.Rv = Rv
         self.band_lambdas = band_lambdas
@@ -325,7 +340,7 @@ class StarWave:
         pdict : dict
             parameter dictionary containing SFH parameters
         sfh_type : str
-            type of SFH being fitted/sampled from ('gaussian' or 'grid')
+            type of SFH being fitted/sampled from ('gaussian', 'grid' or 'empirical_mdf')
 
         Returns
         -------
@@ -354,6 +369,16 @@ class StarWave:
 
             else:
                 return GridSFH(self.sfh_grid)
+
+        elif sfh_type == 'empirical_mdf':
+            feh_gr = GeneralRandom(self.feh_dis[:, 0], self.feh_dis[:, 1], len(self.feh_dis[:, 0]))
+            if self.age_type == 'gaussian':
+                age_dist = stats.norm(loc = pdict['age'], scale = pdict['sig_age'])
+            elif self.age_type == 'exponential':
+                scale = 1.0 / pdict['tau']
+                loc = pdict['t0']
+                age_dist = exponential_decay(loc = loc, scale = scale)
+            return Emp_MDF_Sci_Age(age_dist, feh_gr, self.age_range, self.feh_range)
 
     def set_dm_dist(self, pdict, dm_type):
         """
