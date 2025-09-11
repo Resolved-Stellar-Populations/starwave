@@ -592,7 +592,8 @@ class StarWave:
                 gamma = None,
                 cores = 1, alpha = 0.5,
                 statistic = 'output',
-                gamma_kw = {}):
+                gamma_kw = {},
+                train_kw = {}):
 
         """
         main function to fit an observed CMD using an instatiated StarWave object
@@ -651,7 +652,7 @@ class StarWave:
         for _ in range(n_rounds):
             print('Starting round %i of neural inference...' % (_+1))
             theta, x = simulate_for_sbi(self.simulator, proposal, num_simulations=n_sims, num_workers = cores)
-            density_estimator = inference.append_simulations(theta, x, proposal=proposal).train()
+            density_estimator = inference.append_simulations(theta, x, proposal=proposal).train(**train_kw)
             posterior = inference.build_posterior(density_estimator)
             self.posteriors.append(posterior)
             proposal = posterior.set_default_x(obs)
