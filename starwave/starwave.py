@@ -44,7 +44,7 @@ class StarWave:
     """
 
     def __init__(self, isodf, asdf, bands, band_lambdas, imf_type, sfh_type = 'gaussian',
-        dm_type = 'gaussian', av_type = 'lognormal', sfh_grid = None, Rv = 3.1, trgb=-100, mass_range=None, age_range=None, feh_range=None, feh_dis=None, age_type=None, params_kwargs = None):
+        dm_type = 'gaussian', av_type = 'lognormal', sfh_grid = None, Rv = 3.1, trgb=-100, mass_range=None, color_range=None, age_range=None, feh_range=None, feh_dis=None, age_type=None, params_kwargs = None):
         """
         Initializes the StarWave object
         Parameters
@@ -81,6 +81,8 @@ class StarWave:
         mass_range : tuple
             tuple of (min_mass, max_mass) to limit the mass range of the sampled stars
             if None or invalid, defaults to the range of the isochrone lower limit to 8 Msun (for binary systems)
+        color_range : list of tuples
+            list of tuples (min_color, max_color) to limit the color range of the sampled stars
         age_range : tuple
             tuple of (min_age, max_age) to limit the age range of the sampled stars
             if not provided, defaults to the full range of the isochrone data
@@ -131,6 +133,11 @@ class StarWave:
         self.sfh_grid = sfh_grid
         self.feh_dis = feh_dis
         self.age_type = age_type
+
+        if color_range is not None and len(color_range) == len(bands) - 1:
+            self.color_range = color_range
+        else:
+            self.color_range = [(-100, 100) for _ in range(len(bands) - 1)]
 
         self.Rv = Rv
         self.band_lambdas = band_lambdas
@@ -272,7 +279,13 @@ class StarWave:
 
         output_mags = input_mags + self.asdf_noise[idxs]
 
-        output_good = ~(np.isnan(output_mags).any(axis = 1))
+        output_colors = np.zeros((len(output_mags), len(self.bands) - 1))
+        color_mask = np.zeros(len(output_mags), dtype=bool)
+        for ii in range(len(self.bands) - 1):
+            output_colors[:, ii] = output_mags[:, ii + 1] - output_mags[:, 0]
+            color_mask += (output_colors[:, ii] < self.color_range[ii][0]) + (output_colors[:, ii] > self.color_range[ii][1])
+
+        output_good = (~(np.isnan(output_mags).any(axis = 1)) & ~color_mask)
 
         output_mags = output_mags[output_good]
 
