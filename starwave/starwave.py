@@ -200,7 +200,7 @@ class StarWave:
             self.feh_range = feh_range
             print('using provided metallicity range: %.2f - %.2f' % (feh_range[0], feh_range[1]))
 
-    def init_scaler(self, observed_cmd, gamma = 0.5):
+    def init_scaler(self, observed_cmd, gamma = None, n_components = 50, gamma_kw = {}):
         """
         initialize min-max scaling of CMD, along with the Nystroem kernel
         Parameters
@@ -216,7 +216,11 @@ class StarWave:
         self.cmd_scaler = MinMaxScaler()
         self.cmd_scaler.fit(observed_cmd);
         scaled_observed_cmd = self.cmd_scaler.transform(observed_cmd)
-        Phi_approx = Nystroem(kernel = 'rbf', n_components=50, gamma = gamma) 
+        if gamma is None:
+            print('finding optimal kernel width...')
+            gamma = self.best_gamma(scaled_observed_cmd, **gamma_kw)
+            print('setting gamma = %i' % gamma)
+        Phi_approx = Nystroem(kernel = 'rbf', n_components=n_components, gamma = gamma) 
         Phi_approx.fit(scaled_observed_cmd)
         self.mapping = Phi_approx.transform
         print('scaler initialized and mapping defined!')
@@ -315,7 +319,7 @@ class StarWave:
 
         return cmd
 
-    def best_gamma(self, cmd, q = 0.68, fac = 1, NN = 5):
+    def best_gamma(self, cmd, q = 0.68, fac = 1, NN = 650):
         """
         find best gamma value using Mario's heuristic
         Parameters
@@ -603,6 +607,7 @@ class StarWave:
                 savename = 'starwave',
                 min_acceptance_rate = 0.0001,
                 gamma = None,
+                n_components = 50,
                 cores = 1, alpha = 0.5,
                 statistic = 'output',
                 gamma_kw = {},
@@ -632,14 +637,10 @@ class StarWave:
         if cores == 1:
             pass # IMPLEMENT SBI MULTICORE
 
-        scaled_observed_cmd = self.init_scaler(observed_cmd, gamma = gamma)
+        scaled_observed_cmd = self.init_scaler(observed_cmd, gamma = gamma, n_components = n_components, gamma_kw = gamma_kw)
         obs = torch.tensor(self.kernel_representation(scaled_observed_cmd, self.mapping))
         self.obs = obs
 
-        if gamma is None:
-            print('finding optimal kernel width...')
-            gamma = self.best_gamma(scaled_observed_cmd, **gamma_kw)
-            print('setting gamma = %i' % gamma)
 
         self.dummy_cmd = np.zeros(observed_cmd.shape)
         
