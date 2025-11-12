@@ -200,7 +200,7 @@ class StarWave:
             self.feh_range = feh_range
             print('using provided metallicity range: %.2f - %.2f' % (feh_range[0], feh_range[1]))
 
-    def init_scaler(self, observed_cmd, gamma = 0.5):
+    def init_scaler(self, observed_cmd, gamma = None, n_components = 50, best_gamma_kw = {}):
         """
         initialize min-max scaling of CMD, along with the Nystroem kernel
         Parameters
@@ -216,7 +216,11 @@ class StarWave:
         self.cmd_scaler = MinMaxScaler()
         self.cmd_scaler.fit(observed_cmd);
         scaled_observed_cmd = self.cmd_scaler.transform(observed_cmd)
-        Phi_approx = Nystroem(kernel = 'rbf', n_components=50, gamma = gamma) 
+        if gamma is None:
+            print('finding optimal kernel width...')
+            gamma = self.best_gamma(scaled_observed_cmd, **best_gamma_kw)
+            print('setting gamma = %i' % gamma)
+        Phi_approx = Nystroem(kernel = 'rbf', n_components=n_components, gamma = gamma) 
         Phi_approx.fit(scaled_observed_cmd)
         self.mapping = Phi_approx.transform
         print('scaler initialized and mapping defined!')
@@ -315,7 +319,7 @@ class StarWave:
 
         return cmd
 
-    def best_gamma(self, cmd, q = 0.68, fac = 1, NN = 5):
+    def best_gamma(self, cmd, q = 0.68, fac = 1, NN = 650):
         """
         find best gamma value using Mario's heuristic
         Parameters
@@ -603,25 +607,45 @@ class StarWave:
                 savename = 'starwave',
                 min_acceptance_rate = 0.0001,
                 gamma = None,
+                n_components = 50,
                 cores = 1, alpha = 0.5,
                 statistic = 'output',
-                gamma_kw = {},
+                best_gamma_kw = {},
                 train_kw = {}):
 
         """
         main function to fit an observed CMD using an instatiated StarWave object
-        Parameters
+         Parameters
         ----------
-        observed_cmd :
-        n_rounds :
-        n_sims :
-        savename :
-        min_acceptance_rate :
-        gamma :
-        cores :
-        alpha :
-        statistic :
-        gamma_kw :
+        observed_cmd : array-like of shape (N, 2)
+            The observed color–magnitude diagram data
+        n_rounds : int, default=5
+            Number of sequential neural posterior estimation rounds. Each round refines
+            the proposal distribution based on the posterior from the previous round.
+        n_sims : int, default=100
+            Number of simulations per round to generate synthetic CMDs.
+        savename : str, default='starwave'
+            Base name for saving intermediate results or outputs (not currently implemented).
+        min_acceptance_rate : float, default=0.0001
+            Minimum acceptance rate threshold (currently unused).
+        gamma : float or None, default=None
+            Kernel scaling parameter for CMD normalization. If `None`, it is determined
+            automatically using a heuristic (`best_gamma`).
+        n_components : int, default=50
+            Number of components used in the CMD kernel representation.
+        cores : int, default=1
+            Number of CPU cores to use for parallel simulations. Multi-core support is not
+            yet implemented (`cores > 1` is ignored).
+        alpha : float, default=0.5
+            Weighting parameter for CMD kernel distance computation (reserved for future use).
+        statistic : {'output', ...}, default='output'
+            The summary statistic or representation type to use (reserved for future use).
+        best_gamma_kw : dict, optional
+            Additional keyword arguments passed to the `best_gamma` heuristic used for
+            CMD scaling (e.g., quantile, nearest neighbors).
+        train_kw : dict, optional
+            Keyword arguments passed to the `SNPE.train()` function, allowing customization
+            of the neural density estimator training process.
 
         Returns
         -------
@@ -632,14 +656,10 @@ class StarWave:
         if cores == 1:
             pass # IMPLEMENT SBI MULTICORE
 
-        scaled_observed_cmd = self.init_scaler(observed_cmd, gamma = gamma)
+        scaled_observed_cmd = self.init_scaler(observed_cmd, gamma = gamma, n_components = n_components, best_gamma_kw = best_gamma_kw)
         obs = torch.tensor(self.kernel_representation(scaled_observed_cmd, self.mapping))
         self.obs = obs
 
-        if gamma is None:
-            print('finding optimal kernel width...')
-            gamma = self.best_gamma(scaled_observed_cmd, **gamma_kw)
-            print('setting gamma = %i' % gamma)
 
         self.dummy_cmd = np.zeros(observed_cmd.shape)
         
