@@ -44,7 +44,7 @@ class StarWave:
     """
 
     def __init__(self, isodf, asdf, bands, band_lambdas, imf_type, sfh_type = 'gaussian',
-        dm_type = 'gaussian', av_type = 'lognormal', sfh_grid = None, Rv = 3.1, trgb=-100, mass_range=None, color_range=None, age_range=None, feh_range=None, feh_dis=None, age_type=None, params_kwargs = None):
+        dm_type = 'gaussian', av_type = 'lognormal', sfh_grid = None, Rv = 3.1, trgb=-100, mass_range=None, color_range=None, age_range=None, feh_range=None, feh_dis=None, age_type=None, params_kwargs = None, color_corr = None):
         """
         Initializes the StarWave object
         Parameters
@@ -95,6 +95,8 @@ class StarWave:
             if sfh_type = 'empirical_mdf', this is the type of age distribution to use, currently only 'gaussian' and 'exponential' is supported
         params_kwargs : dict
             dictionary for printing/saving prior parameters
+        color_corr : None or 2d array
+            color correction array to apply to synthetic CMDs. The first column is the magnitude and the second column is the color correction to apply.
 
         """
 
@@ -133,6 +135,11 @@ class StarWave:
         self.sfh_grid = sfh_grid
         self.feh_dis = feh_dis
         self.age_type = age_type
+        
+        if color_corr is not None and len(color_corr) == len(bands):
+            self.color_corr = color_corr
+        else:
+            self.color_corr = None
 
         if color_range is not None and len(color_range) == len(bands) - 1:
             self.color_range = color_range
@@ -316,6 +323,8 @@ class StarWave:
         cmd = mags
         for ii in range(mags.shape[1] - 1):
             cmd[:, ii + 1] -= cmd[:, 0]
+            if self.color_corr is not None:
+                cmd[:, ii + 1] += np.interp(cmd[:, 0], self.color_corr[:, 0], self.color_corr[:, ii + 1])
 
         return cmd
 
