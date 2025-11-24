@@ -95,8 +95,8 @@ class StarWave:
             if sfh_type = 'empirical_mdf', this is the type of age distribution to use, currently only 'gaussian' and 'exponential' is supported
         params_kwargs : dict
             dictionary for printing/saving prior parameters
-        color_corr : None or 2d array
-            color correction array to apply to synthetic CMDs. The first column is the magnitude and the second column is the color correction to apply.
+        color_corr : Spline Function
+            empirical color correction to apply to synthetic CMDs, should be a scipy spline function
 
         """
 
@@ -136,10 +136,12 @@ class StarWave:
         self.feh_dis = feh_dis
         self.age_type = age_type
         
-        if color_corr is not None and len(color_corr) == len(bands):
+        if color_corr is not None:
             self.color_corr = color_corr
+            print('applying empirical color correction to synthetic CMDs')
         else:
             self.color_corr = None
+            print('no color correction applied to synthetic CMDs')
 
         if color_range is not None and len(color_range) == len(bands) - 1:
             self.color_range = color_range
@@ -309,7 +311,7 @@ class StarWave:
  
         return input_mags, output_mags, sdict 
     
-    def make_cmd(self, mags):
+    def make_cmd(self, mags, sim=False):
         """
         convert magnitudes to a cmd
         Parameters
@@ -323,8 +325,8 @@ class StarWave:
         cmd = mags
         for ii in range(mags.shape[1] - 1):
             cmd[:, ii + 1] -= cmd[:, 0]
-            if self.color_corr is not None:
-                cmd[:, ii + 1] += np.interp(cmd[:, 0], self.color_corr[:, 0], self.color_corr[:, ii + 1])
+            if self.color_corr is not None and sim == True:
+                cmd[:, ii + 1] += self.color_corr(mags[:, 0])
 
         return cmd
 
@@ -547,8 +549,8 @@ class StarWave:
         nstars = int(stats.poisson.rvs(intensity))
 
         mags_in, mags_out, sdict = self.get_cmd(nstars, gr_dict, pdict)
-        cmd_in = self.make_cmd(mags_in)
-        cmd_out = self.make_cmd(mags_out)
+        cmd_in = self.make_cmd(mags_in, sim=True)
+        cmd_out = self.make_cmd(mags_out, sim=True)
 
         return cmd_in, cmd_out, sdict
 
