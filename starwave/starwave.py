@@ -313,10 +313,13 @@ class StarWave:
     
     def make_cmd(self, mags, sim=False):
         """
-        convert magnitudes to a cmd
+        convert magnitudes to a cmd, applying color correction if needed
         Parameters
         ----------
         mags : array
+            input magnitudes
+        sim : bool, default=False
+            whether the mags are from a simulation (True) or observed (False). Color correction is only applied to simulated mags (inside sample_cmd).
 
         Returns
         -------
