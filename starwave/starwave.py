@@ -44,7 +44,7 @@ class StarWave:
     """
 
     def __init__(self, isodf, asdf, bands, band_lambdas, imf_type, sfh_type = 'gaussian',
-        dm_type = 'gaussian', av_type = 'lognormal', sfh_grid = None, Rv = 3.1, trgb=-100, mass_range=None, color_range=None, age_range=None, feh_range=None, feh_dis=None, age_type=None, params_kwargs = None):
+        dm_type = 'gaussian', av_type = 'lognormal', sfh_grid = None, Rv = 3.1, trgb=-100, mass_range=None, color_range=None, age_range=None, feh_range=None, feh_dis=None, age_type=None, params_kwargs = None, color_corr = None):
         """
         Initializes the StarWave object
         Parameters
@@ -95,6 +95,8 @@ class StarWave:
             if sfh_type = 'empirical_mdf', this is the type of age distribution to use, currently only 'gaussian' and 'exponential' is supported
         params_kwargs : dict
             dictionary for printing/saving prior parameters
+        color_corr : Spline Function
+            empirical color correction to apply to synthetic CMDs, should be a scipy spline function
 
         """
 
@@ -133,6 +135,13 @@ class StarWave:
         self.sfh_grid = sfh_grid
         self.feh_dis = feh_dis
         self.age_type = age_type
+        
+        if color_corr is not None:
+            self.color_corr = color_corr
+            print('applying empirical color correction to synthetic CMDs')
+        else:
+            self.color_corr = None
+            print('no color correction applied to synthetic CMDs')
 
         if color_range is not None and len(color_range) == len(bands) - 1:
             self.color_range = color_range
@@ -302,12 +311,15 @@ class StarWave:
  
         return input_mags, output_mags, sdict 
     
-    def make_cmd(self, mags):
+    def make_cmd(self, mags, sim=False):
         """
-        convert magnitudes to a cmd
+        convert magnitudes to a cmd, applying color correction if needed
         Parameters
         ----------
         mags : array
+            input magnitudes
+        sim : bool, default=False
+            whether the mags are from a simulation (True) or observed (False). Color correction is only applied to simulated mags (inside sample_cmd).
 
         Returns
         -------
@@ -316,6 +328,8 @@ class StarWave:
         cmd = mags
         for ii in range(mags.shape[1] - 1):
             cmd[:, ii + 1] -= cmd[:, 0]
+            if self.color_corr is not None and sim == True:
+                cmd[:, ii + 1] += self.color_corr(mags[:, 0])
 
         return cmd
 
@@ -538,8 +552,8 @@ class StarWave:
         nstars = int(stats.poisson.rvs(intensity))
 
         mags_in, mags_out, sdict = self.get_cmd(nstars, gr_dict, pdict)
-        cmd_in = self.make_cmd(mags_in)
-        cmd_out = self.make_cmd(mags_out)
+        cmd_in = self.make_cmd(mags_in, sim=True)
+        cmd_out = self.make_cmd(mags_out, sim=True)
 
         return cmd_in, cmd_out, sdict
 
